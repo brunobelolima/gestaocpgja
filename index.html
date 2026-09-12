@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IAC-Pal v1.2 — Fluxo Interativo</title>
+<style>
+:root{--deep:#073F4A;--ocean:#197C82;--sand:#D6A16F;--cream:#F6F1E9;--bg:#FBF9F5;--muted:#627276;--line:#D9E1DF;--white:#fff;--red:#9A332B;--redbg:#FFF3F1}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:#26373B;line-height:1.5}
+.wrap{width:min(860px,calc(100% - 28px));margin:0 auto;padding:30px 0 70px}
+.header{margin-bottom:24px} .eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.12em;font-weight:800;color:var(--ocean)}
+h1{font-size:clamp(32px,6vw,50px);line-height:1.05;color:var(--deep);margin:8px 0 10px} .lead{color:var(--muted);max-width:760px}
+.progress{display:flex;gap:12px;align-items:center;margin:24px 0} .track{height:8px;background:#E8EEEC;border-radius:999px;flex:1;overflow:hidden}
+.bar{height:100%;background:var(--ocean);width:0;transition:width .25s} .progress span{font-size:12px;color:var(--muted);font-weight:700;min-width:80px;text-align:right}
+.card{background:var(--white);border:1px solid var(--line);border-radius:24px;padding:26px;box-shadow:0 10px 32px rgba(7,63,74,.05)}
+.card h2{margin:0;color:var(--deep);font-size:25px;line-height:1.2} .card p{color:var(--muted)}
+.options{display:grid;gap:10px;margin-top:20px} .option{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px 16px;text-align:left;cursor:pointer;font-size:15px;min-height:52px}
+.option:hover,.option:focus{border-color:var(--ocean);background:#EEF6F5;outline:none} .score{font-weight:900;color:var(--ocean);margin-right:10px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px} button.secondary{border:1px solid var(--line);background:#fff;color:var(--deep);padding:11px 15px;border-radius:12px;font-weight:700;cursor:pointer}
+.alert-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px} .check{display:flex;gap:10px;align-items:flex-start;padding:11px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.check input{margin-top:3px;width:18px;height:18px} .axes{display:grid;gap:18px} .axis-group{border-top:1px solid var(--line);padding-top:16px} .axis-title{font-weight:800;color:var(--deep);margin-bottom:9px}
+.pills{display:flex;flex-wrap:wrap;gap:9px} .pill{border:1px solid var(--line);border-radius:999px;padding:10px 13px;background:#fff;cursor:pointer} .pill.active{border-color:var(--ocean);background:#EAF5F4;color:var(--deep);font-weight:800}
+.result{display:grid;gap:18px} .hero-result{padding:22px;border-radius:18px;background:var(--cream)} .hero-result h2{font-size:30px} .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.metric{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff} .metric small{display:block;color:var(--muted)} .metric strong{font-size:20px;color:var(--deep)}
+.program{border-left:4px solid var(--ocean);padding:16px 18px;background:#F1F7F6;border-radius:0 14px 14px 0} .warning{border-left-color:var(--red);background:var(--redbg)} .hidden{display:none!important}
+.note{font-size:12px;color:var(--muted);margin-top:14px}
+@media(max-width:640px){.alert-grid,.metric-grid{grid-template-columns:1fr 1fr} .card{padding:20px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="header">
+    <div class="eyebrow">IAC-Pal v1.2</div>
+    <h1>Fluxo Interativo de Complexidade Paliativa</h1>
+    <p class="lead">Avalie um domínio por vez, marque os alertas clínicos e defina os eixos M, E e A. Ao final, o sistema calcula a complexidade global e sugere a modalidade assistencial.</p>
+  </header>
+
+  <div class="progress"><div class="track"><div class="bar" id="bar"></div></div><span id="progressText">Domínio 1 de 10</span></div>
+
+  <section id="domainCard" class="card">
+    <div class="eyebrow" id="domainStep">Domínio 1</div>
+    <h2 id="domainTitle"></h2>
+    <p>Escolha a alternativa que melhor representa a situação atual.</p>
+    <div class="options" id="domainOptions"></div>
+    <div class="actions"><button type="button" class="secondary hidden" id="backDomain">← Voltar</button></div>
+  </section>
+
+  <section id="alertsCard" class="card hidden">
+    <div class="eyebrow">Marcadores de alerta</div>
+    <h2>Há algum marcador de maior risco ou instabilidade?</h2>
+    <p>Marque todos os que estiverem presentes. Eles não substituem a pontuação, mas podem elevar a preocupação clínica.</p>
+    <div class="alert-grid" id="alertGrid"></div>
+    <div class="actions">
+      <button type="button" class="secondary" id="backAlerts">← Voltar</button>
+      <button type="button" class="secondary" id="nextAxes">Continuar →</button>
+    </div>
+  </section>
+
+  <section id="axesCard" class="card hidden">
+    <div class="eyebrow">Intensidade e modalidade</div>
+    <h2>Defina os eixos M, E e A</h2>
+    <p>A pontuação global mede complexidade. Os eixos abaixo ajudam a definir quem precisa acompanhar e em qual modalidade.</p>
+    <div class="axes">
+      <div class="axis-group"><div class="axis-title">Necessidade médica</div><div class="pills" data-axis="M">
+        <button type="button" class="pill" data-value="M0">M0 — eventual</button>
+        <button type="button" class="pill" data-value="M1">M1 — 1 ciclo médico/mês</button>
+        <button type="button" class="pill" data-value="M2">M2 — 2 ciclos médicos/mês</button>
+      </div></div>
+      <div class="axis-group"><div class="axis-title">Necessidade de enfermagem</div><div class="pills" data-axis="E">
+        <button type="button" class="pill" data-value="E0">E0 — não programada</button>
+        <button type="button" class="pill" data-value="E1">E1 — 2 teleconsultas/mês</button>
+        <button type="button" class="pill" data-value="E2">E2 — 1 teleconsulta/semana</button>
+      </div></div>
+      <div class="axis-group"><div class="axis-title">Acesso / modalidade</div><div class="pills" data-axis="A">
+        <button type="button" class="pill" data-value="A0">A0 — consultório viável</button>
+        <button type="button" class="pill" data-value="A1">A1 — consultório com apoio</button>
+        <button type="button" class="pill" data-value="A2">A2 — domicílio preferencial</button>
+      </div></div>
+    </div>
+    <div class="actions">
+      <button type="button" class="secondary" id="backAxes">← Voltar</button>
+      <button type="button" class="secondary" id="showResult">Ver resultado</button>
+    </div>
+    <p class="note" id="axisError"></p>
+  </section>
+
+  <section id="resultCard" class="card hidden" aria-live="polite">
+    <div class="result">
+      <div class="hero-result">
+        <div class="eyebrow">Resultado</div>
+        <h2 id="complexityTitle"></h2>
+        <p id="complexityText"></p>
+      </div>
+      <div class="metric-grid">
+        <div class="metric"><small>Pontuação</small><strong id="scoreMetric"></strong></div>
+        <div class="metric"><small>Alertas</small><strong id="alertMetric"></strong></div>
+        <div class="metric"><small>M / E</small><strong id="meMetric"></strong></div>
+        <div class="metric"><small>Acesso</small><strong id="aMetric"></strong></div>
+      </div>
+      <div class="program" id="programBox"><strong id="programTitle"></strong><div id="programText"></div></div>
+      <div class="program warning hidden" id="warningBox"></div>
+      <p class="note">Instrumento clínico-operacional em desenvolvimento. A recomendação final depende de julgamento clínico e não deve ser usada isoladamente.</p>
+      <div class="actions">
+        <button type="button" class="secondary" id="restart">Nova avaliação</button>
+        <button type="button" class="secondary" id="backResult">← Revisar eixos</button>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+const domains = [["A. Sintomas", ["Ausentes/controlados", "Leves/ocasionais", "Moderados ou ajustes regulares", "Intensos, refratários ou variáveis"]], ["B. Funcionalidade", ["Independente ou pouco comprometida; desloca-se ao consultório sem ajuda relevante", "Limitação leve; consegue ir ao consultório com apoio simples/acompanhante", "Dependência significativa; deslocamento ao consultório é difícil, cansativo ou exige assistência relevante", "Acamado, transferência insegura/inviável ou deslocamento desproporcional; atendimento domiciliar preferencial"]], ["C. Trajetória", ["Estável", "Progressão lenta", "Progressão evidente", "Deterioração rápida/fase final"]], ["D. Manejo médico", ["Sem ajustes previstos", "Ajustes ocasionais", "Revisões regulares", "Ajustes frequentes/instabilidade"]], ["E. Enfermagem", ["Necessidades mínimas", "Orientações pontuais", "Monitoramento regular", "Necessidades frequentes/complexas"]], ["F. Família/cuidador", ["Estrutura adequada", "Sobrecarga leve", "Sobrecarga/dificuldade relevante", "Exaustão, conflito ou incapacidade"]], ["G. Psicossocial/emocional", ["Sem problema relevante", "Sofrimento leve", "Sofrimento significativo", "Crise/sofrimento intenso"]], ["H. Decisões/planejamento", ["Plano definido", "Questões pendentes", "Decisões complexas", "Conflito/incerteza/urgência"]], ["I. Uso de serviços", ["Sem intercorrências", "Evento ocasional", "PS/internações recorrentes", "Intercorrências muito frequentes/alta instável"]], ["J. Ambiente domiciliar", ["Adequado", "Pequenas limitações", "Barreiras relevantes", "Inseguro/inviável sem intervenção"]]];
+const alertItems = ["Sintoma grave ou potencialmente refratário", "Deterioração clínica rápida", "PPS ≤ 40% ou perda funcional acelerada", "Suspeita de últimos dias/semanas de vida", "Alta hospitalar recente com instabilidade", "≥ 2 idas ao pronto-socorro/internações recentes", "Delirium recorrente ou persistente", "Necessidade frequente de ajuste de opioides/sintomáticos", "Cuidador em exaustão ou incapaz de manter o cuidado", "Ausência de cuidador quando necessário", "Conflito familiar relevante", "Divergência entre paciente/família/equipe sobre objetivos", "Decisão complexa pendente", "Desejo de permanecer em casa com risco de descompensação", "Risco de crise previsível no domicílio"];
+const scores = Array(10).fill(null);
+let current = 0;
+const axes = {M:null,E:null,A:null};
+
+const $ = s => document.querySelector(s);
+const cardDomain=$('#domainCard'), cardAlerts=$('#alertsCard'), cardAxes=$('#axesCard'), cardResult=$('#resultCard');
+
+function updateProgress(label){
+  const done = current < 10 ? current+1 : 10;
+  $('#bar').style.width = Math.min(100, done*10) + '%';
+  $('#progressText').textContent = label || `Domínio ${done} de 10`;
+}
+
+function renderDomain(){
+  const [title, opts] = domains[current];
+  $('#domainStep').textContent = `Domínio ${current+1} de 10`;
+  $('#domainTitle').textContent = title;
+  const wrap=$('#domainOptions'); wrap.innerHTML='';
+  opts.forEach((txt,i)=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='option';
+    b.innerHTML=`<span class="score">${i}</span>${txt}`;
+    b.addEventListener('click',()=>{scores[current]=i;if(current<9){current++;renderDomain();}else{cardDomain.classList.add('hidden');cardAlerts.classList.remove('hidden');updateProgress('Alertas clínicos');}});
+    wrap.appendChild(b);
+  });
+  $('#backDomain').classList.toggle('hidden', current===0);
+  updateProgress();
+}
+$('#backDomain').addEventListener('click',()=>{if(current>0){current--;renderDomain();}});
+
+alertItems.forEach((txt,i)=>{
+  const lab=document.createElement('label'); lab.className='check';
+  lab.innerHTML=`<input type="checkbox" value="${i}"><span>${txt}</span>`;
+  $('#alertGrid').appendChild(lab);
+});
+
+$('#backAlerts').addEventListener('click',()=>{cardAlerts.classList.add('hidden');current=9;cardDomain.classList.remove('hidden');renderDomain();});
+$('#nextAxes').addEventListener('click',()=>{cardAlerts.classList.add('hidden');cardAxes.classList.remove('hidden');updateProgress('Eixos M / E / A');});
+$('#backAxes').addEventListener('click',()=>{cardAxes.classList.add('hidden');cardAlerts.classList.remove('hidden');updateProgress('Alertas clínicos');});
+
+document.querySelectorAll('.pills').forEach(group=>{
+  group.querySelectorAll('.pill').forEach(btn=>btn.addEventListener('click',()=>{
+    group.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active'); axes[group.dataset.axis]=btn.dataset.value; $('#axisError').textContent='';
+  }));
+});
+
+function complexity(total){
+  if(total<=7) return ['Baixa complexidade','Baixa complexidade global. Defina modalidade e intensidade pelos eixos M, E e A.'];
+  if(total<=15) return ['Complexidade moderada','Complexidade moderada. Avalie necessidade médica, enfermagem e acesso para definir o programa.'];
+  return ['Alta complexidade','Alta complexidade. Considere N3 ou plano individualizado, com revisão médica da intensidade assistencial.'];
+}
+
+function recommendation(total){
+  const M=axes.M,E=axes.E,A=axes.A;
+  if(total>=16 && M==='M2' && E==='E2' && A==='A2') return ['N3 — Cuidado Intensivo','2 visitas médicas domiciliares/mês + 2 teleconsultas médicas/mês + 1 teleconsulta de enfermagem/semana | R$ 2.000/mês'];
+  if(M==='M1' && E==='E2' && A==='A2') return ['N2B — Cuidado Integrado','1 visita médica domiciliar/mês + 1 teleconsulta médica em até 1 mês + 1 teleconsulta de enfermagem/semana | R$ 1.300/mês'];
+  if(M==='M1' && E==='E0' && A==='A2') return ['N2A — Cuidado Médico','1 visita médica domiciliar/mês + 1 teleconsulta médica em até 1 mês | R$ 700/mês'];
+  if(M==='M1' && (A==='A0'||A==='A1')) return ['Acompanhamento Médico em Consultório','1 consulta presencial + 1 reavaliação em até 30 dias | R$ 600/ciclo'];
+  if(E==='E1' && M==='M0') return ['N1 — Acompanhamento','2 teleconsultas de enfermagem/mês | R$ 300/mês'];
+  return ['Plano individualizado','A combinação atual não corresponde exatamente a uma linha-padrão. Defina a intensidade com julgamento clínico.'];
+}
+
+$('#showResult').addEventListener('click',()=>{
+  if(!axes.M||!axes.E||!axes.A){$('#axisError').textContent='Selecione M, E e A antes de continuar.';return;}
+  const total=scores.reduce((a,b)=>a+(b||0),0);
+  const alerts=document.querySelectorAll('#alertGrid input:checked').length;
+  const high=scores.filter(x=>x===3).length;
+  const [ctitle,ctext]=complexity(total);
+  const [ptitle,ptext]=recommendation(total);
+  $('#complexityTitle').textContent=ctitle;
+  $('#complexityText').textContent=ctext;
+  $('#scoreMetric').textContent=`${total} / 30`;
+  $('#alertMetric').textContent=alerts;
+  $('#meMetric').textContent=`${axes.M} / ${axes.E}`;
+  $('#aMetric').textContent=axes.A;
+  $('#programTitle').textContent=ptitle;
+  $('#programText').textContent=ptext;
+
+  const warnings=[];
+  if(high>=2) warnings.push('Dois ou mais domínios receberam escore 3: considerar alta complexidade mesmo se a soma for inferior a 16.');
+  else if(high===1) warnings.push('Há um domínio com escore 3: revisar clinicamente o nível sugerido.');
+  if(alerts>=1) warnings.push(`${alerts} marcador(es) de alerta presente(s): interpretar junto ao quadro clínico.`);
+  if(warnings.length){$('#warningBox').textContent=warnings.join(' ');$('#warningBox').classList.remove('hidden');} else $('#warningBox').classList.add('hidden');
+
+  cardAxes.classList.add('hidden'); cardResult.classList.remove('hidden'); updateProgress('Resultado');
+});
+
+$('#backResult').addEventListener('click',()=>{cardResult.classList.add('hidden');cardAxes.classList.remove('hidden');updateProgress('Eixos M / E / A');});
+$('#restart').addEventListener('click',()=>{
+  scores.fill(null); current=0; Object.keys(axes).forEach(k=>axes[k]=null);
+  document.querySelectorAll('#alertGrid input').forEach(x=>x.checked=false);
+  document.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));
+  cardResult.classList.add('hidden'); cardAlerts.classList.add('hidden'); cardAxes.classList.add('hidden'); cardDomain.classList.remove('hidden'); renderDomain();
+});
+renderDomain();
+</script>
+</body>
+</html>
