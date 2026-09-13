@@ -76,3 +76,10 @@ Por isso, é necessário acesso à internet para carregar essas bibliotecas.
 A planilha incluída neste pacote é apenas o modelo operacional. O arquivo real deve ser carregado pelo usuário diretamente no navegador.
 
 O GitHub Pages é estático e não oferece autenticação, prontuário, banco de dados, controle de acesso clínico ou backup multiusuário. Para uso compartilhado entre profissionais, será necessário migrar para uma arquitetura com autenticação e backend adequado.
+
+
+## Privacidade — versão 1.2
+- O BI não utiliza a coluna de nome dos pacientes.
+- Ao carregar o Excel, colunas `Nome`, `Nome do paciente`, `Nome paciente` ou `Paciente` são removidas da memória da aplicação na aba Pacientes.
+- Na tabela interativa, os registros são identificados apenas por `Nº` sequencial: 1, 2, 3...
+- Indicadores e gráficos trabalham apenas com dados agregados e identificadores administrativos não nominais.

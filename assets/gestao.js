@@ -9,6 +9,7 @@
 
   function status(msg, error=false){ const el=$('#status'); el.textContent=msg; el.style.color=error?'#A33A31':'#627276'; }
   function normalize(v){ return (v ?? '').toString().trim(); }
+  function isPatientNameHeader(h){ const x=normalize(h).toLowerCase().replace(/[_-]+/g,' ').replace(/\s+/g,' '); return ['nome','nome do paciente','nome paciente','paciente'].includes(x); }
   function truthy(v){ return ['sim','s','yes','true','1'].includes(normalize(v).toLowerCase()); }
   function parseMoney(v){ if(typeof v==='number') return v; const s=normalize(v).replace(/R\$\s?/g,'').replace(/\./g,'').replace(',','.'); const n=Number(s); return Number.isFinite(n)?n:0; }
   function dateValue(v){ if(v instanceof Date) return v; if(typeof v==='number' && window.XLSX){ const d=XLSX.SSF.parse_date_code(v); return d?new Date(d.y,d.m-1,d.d):null; } const s=normalize(v); if(!s) return null; const br=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(br) return new Date(+br[3],+br[2]-1,+br[1]); const d=new Date(s); return Number.isNaN(d.getTime())?null:d; }
@@ -30,10 +31,17 @@
     wb.SheetNames.forEach(name=>{
       const aoa=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:'',raw:true});
       const hi=findHeaderRow(aoa);
-      const headers=(aoa[hi]||[]).map(x=>normalize(x));
+      let headers=(aoa[hi]||[]).map(x=>normalize(x));
       if(!headers.some(Boolean)) return;
-      const width=headers.length;
-      const rows=aoa.slice(hi+1).map(r=>Array.from({length:width},(_,i)=>r[i]??'')).filter(r=>r.some(v=>normalize(v)!==''));
+      const originalWidth=headers.length;
+      let rows=aoa.slice(hi+1).map(r=>Array.from({length:originalWidth},(_,i)=>r[i]??'')).filter(r=>r.some(v=>normalize(v)!==''));
+      // Privacidade: a área de gestão não utiliza nem mantém a coluna com nomes de pacientes.
+      // Na aba Pacientes, qualquer coluna explicitamente identificada como nome é removida da memória do navegador.
+      if(name==='Pacientes'){
+        const keep=headers.map((h,i)=>({h,i})).filter(x=>!isPatientNameHeader(x.h));
+        headers=keep.map(x=>x.h);
+        rows=rows.map(r=>keep.map(x=>r[x.i]));
+      }
       sheets[name]={headers,rows};
     });
     state.sheets=sheets;
@@ -49,7 +57,7 @@
 
   async function loadTemplate(){
     status('Carregando modelo…');
-    try{ const res=await fetch('assets/Painel_Gestao_Clinica_Cuidados_Paliativos_v1.1_BI.xlsx',{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status); await loadArrayBuffer(await res.arrayBuffer(),'Modelo'); }
+    try{ const res=await fetch('assets/Painel_Gestao_Clinica_Atualizado.xlsx',{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status); await loadArrayBuffer(await res.arrayBuffer(),'Modelo'); }
     catch(e){ console.error(e); status('Modelo não carregado. Use “Carregar Excel”.',true); }
   }
 
@@ -70,9 +78,10 @@
   function renderTable(){
     const name=state.selectedSheet; const t=$('#dataTable'); t.innerHTML=''; if(!name||!state.sheets[name]) return;
     const {headers,rows}=state.sheets[name]; const thead=document.createElement('thead'), hr=document.createElement('tr');
+    if(name==='Pacientes'){ const th=document.createElement('th'); th.textContent='Nº'; hr.appendChild(th); }
     headers.forEach(h=>{ const th=document.createElement('th');th.textContent=h||'Coluna';hr.appendChild(th); }); thead.appendChild(hr);t.appendChild(thead);
     const tb=document.createElement('tbody');
-    rows.forEach((row,ri)=>{ const tr=document.createElement('tr'); if(state.selectedRow===ri) tr.classList.add('selected'); tr.addEventListener('click',()=>{state.selectedRow=ri;renderTable();}); headers.forEach((_,ci)=>{ const td=document.createElement('td');td.contentEditable='true';td.textContent=row[ci]??'';td.addEventListener('click',e=>e.stopPropagation());td.addEventListener('focus',()=>{state.selectedRow=ri;});td.addEventListener('blur',()=>{row[ci]=td.textContent.trim(); refreshDashboard();});tr.appendChild(td); });tb.appendChild(tr); }); t.appendChild(tb);
+    rows.forEach((row,ri)=>{ const tr=document.createElement('tr'); if(state.selectedRow===ri) tr.classList.add('selected'); tr.addEventListener('click',()=>{state.selectedRow=ri;renderTable();}); if(name==='Pacientes'){ const n=document.createElement('td'); n.textContent=String(ri+1); n.className='row-number'; tr.appendChild(n); } headers.forEach((_,ci)=>{ const td=document.createElement('td');td.contentEditable='true';td.textContent=row[ci]??'';td.addEventListener('click',e=>e.stopPropagation());td.addEventListener('focus',()=>{state.selectedRow=ri;});td.addEventListener('blur',()=>{row[ci]=td.textContent.trim(); refreshDashboard();});tr.appendChild(td); });tb.appendChild(tr); }); t.appendChild(tb);
   }
 
   function filteredPatients(){ return objects('Pacientes').filter(r=>{ const active=normalize(r['Status']).toLowerCase()==='ativo'; const p=!state.filters.program || normalize(r['Programa atual'])===state.filters.program; return active&&p&&inPeriod(r['Data cadastro']); }); }
