@@ -25,9 +25,22 @@ h1{font-size:clamp(32px,6vw,50px);line-height:1.05;color:var(--deep);margin:8px 
 .program{border-left:4px solid var(--ocean);padding:16px 18px;background:#F1F7F6;border-radius:0 14px 14px 0} .warning{border-left-color:var(--red);background:var(--redbg)} .hidden{display:none!important}
 .note{font-size:12px;color:var(--muted);margin-top:14px}
 @media(max-width:640px){.alert-grid,.metric-grid{grid-template-columns:1fr 1fr} .card{padding:20px}}
+
+.site-nav{width:min(860px,calc(100% - 28px));margin:18px auto 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.site-nav .brand{font-weight:900;color:var(--deep);text-decoration:none}
+.site-nav .links{display:flex;gap:8px;flex-wrap:wrap}
+.site-nav .links a{padding:9px 12px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--deep);font-weight:700;font-size:13px;background:#fff}
+.site-nav .links a.active{background:var(--deep);color:#fff;border-color:var(--deep)}
 </style>
 </head>
 <body>
+<nav class="site-nav" aria-label="Navegação principal">
+  <a class="brand" href="./">Gestão CP Guarujá</a>
+  <div class="links">
+    <a class="active" href="./">IAC-Pal</a>
+    <a href="gestao.html">Gestão & BI</a>
+  </div>
+</nav>
 <main class="wrap">
   <header class="header">
     <div class="eyebrow">IAC-Pal v1.2</div>

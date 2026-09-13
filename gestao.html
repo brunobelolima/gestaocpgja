@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gestão & BI | Clínica de Cuidados Paliativos</title>
+<meta name="description" content="Painel local de gestão da clínica de Cuidados Paliativos: leads, pacientes, produção, receitas, custos, capacidade e qualidade.">
+<link rel="stylesheet" href="assets/gestao.css">
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script defer src="assets/gestao.js"></script>
+</head>
+<body>
+<nav class="site-nav" aria-label="Navegação principal">
+  <a class="brand" href="./">Gestão CP Guarujá</a>
+  <div class="links">
+    <a href="./">IAC-Pal</a>
+    <a class="active" href="gestao.html">Gestão & BI</a>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Painel de gestão v1.0</div>
+      <h1>Planilha interativa + BI</h1>
+      <p>Carregue a planilha da clínica, edite dados no navegador e acompanhe indicadores de captação, conversão, receita, custos, capacidade e qualidade.</p>
+    </div>
+    <div class="privacy-note"><strong>Privacidade:</strong> os dados são processados localmente no navegador. Esta versão não envia a planilha para um servidor próprio.</div>
+  </header>
+
+  <section class="toolbar card">
+    <div class="upload-block">
+      <label class="btn primary" for="fileInput">Carregar Excel</label>
+      <input id="fileInput" type="file" accept=".xlsx,.xls" hidden>
+      <button class="btn" id="loadTemplate" type="button">Carregar modelo</button>
+      <button class="btn" id="exportXlsx" type="button">Exportar Excel</button>
+      <button class="btn danger" id="clearData" type="button">Limpar sessão</button>
+    </div>
+    <div class="status" id="status" aria-live="polite">Carregando modelo…</div>
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="Seções do painel">
+    <button class="tab active" data-tab="dashboard" type="button">Dashboard</button>
+    <button class="tab" data-tab="planilha" type="button">Planilha</button>
+    <button class="tab" data-tab="config" type="button">Configuração</button>
+  </div>
+
+  <section id="dashboard" class="tab-panel">
+    <div class="filters card">
+      <label>Período inicial<input type="date" id="dateStart"></label>
+      <label>Período final<input type="date" id="dateEnd"></label>
+      <label>Programa<select id="programFilter"><option value="">Todos</option></select></label>
+      <button class="btn primary" id="applyFilters" type="button">Aplicar filtros</button>
+      <button class="btn" id="resetFilters" type="button">Limpar filtros</button>
+    </div>
+
+    <div class="kpis" id="kpis">
+      <article class="kpi"><span>Pacientes ativos</span><strong id="kpiPatients">0</strong></article>
+      <article class="kpi"><span>Leads</span><strong id="kpiLeads">0</strong></article>
+      <article class="kpi"><span>Conversão</span><strong id="kpiConversion">0%</strong></article>
+      <article class="kpi"><span>MRR estimado</span><strong id="kpiMrr">R$ 0</strong></article>
+      <article class="kpi"><span>Receita recebida</span><strong id="kpiRevenue">R$ 0</strong></article>
+      <article class="kpi"><span>Custos</span><strong id="kpiCosts">R$ 0</strong></article>
+      <article class="kpi"><span>Margem</span><strong id="kpiMargin">R$ 0</strong></article>
+      <article class="kpi"><span>Inadimplência</span><strong id="kpiDefault">R$ 0</strong></article>
+    </div>
+
+    <div class="charts-grid">
+      <article class="card chart-card"><h2>Pacientes por programa</h2><canvas id="programChart"></canvas></article>
+      <article class="card chart-card"><h2>Funil de leads</h2><canvas id="leadChart"></canvas></article>
+      <article class="card chart-card"><h2>Receita × custos por competência</h2><canvas id="financeChart"></canvas></article>
+      <article class="card chart-card"><h2>Origem dos leads</h2><canvas id="originChart"></canvas></article>
+    </div>
+
+    <div class="summary-grid">
+      <article class="card"><h2>Capacidade</h2><div id="capacitySummary" class="list"></div></article>
+      <article class="card"><h2>Qualidade</h2><div id="qualitySummary" class="list"></div></article>
+    </div>
+  </section>
+
+  <section id="planilha" class="tab-panel hidden">
+    <div class="sheet-toolbar card">
+      <label>Aba<select id="sheetSelect"></select></label>
+      <button class="btn" id="addRow" type="button">Adicionar linha</button>
+      <button class="btn danger" id="deleteRow" type="button">Excluir selecionada</button>
+      <span class="hint">As células podem ser editadas diretamente. Exporte o Excel para salvar fora desta sessão.</span>
+    </div>
+    <div class="table-wrap card"><table id="dataTable"></table></div>
+  </section>
+
+  <section id="config" class="tab-panel hidden">
+    <div class="card config-grid">
+      <div>
+        <h2>Estrutura esperada</h2>
+        <p>O painel reconhece as abas: Pacientes, Leads, Atendimentos, Programas, Financeiro, Custos, Capacidade e Qualidade.</p>
+        <a class="btn primary inline" href="assets/Painel_Gestao_Clinica_Cuidados_Paliativos_v1.1_BI.xlsx" download>Baixar planilha modelo</a>
+      </div>
+      <div>
+        <h2>Uso seguro</h2>
+        <p>GitHub Pages é um site estático. Esta aplicação não substitui prontuário, ERP, backup ou sistema multiusuário. Evite publicar planilhas com dados identificáveis no repositório.</p>
+      </div>
+      <div>
+        <h2>Integração</h2>
+        <p>Para atualizar o site, substitua os arquivos deste pacote na raiz do repositório e publique pelo GitHub Pages.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<footer><div class="wrap foot">IAC-Pal + Gestão & BI · aplicação estática para GitHub Pages</div></footer>
+</body>
+</html>
